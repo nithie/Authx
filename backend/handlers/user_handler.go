@@ -135,3 +135,33 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Password changed successfuly"})
 
 }
+
+func VerifyHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+
+	token := queryParams.Get("token")
+
+	if token == "" {
+		http.Error(w, "Invalid token", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Where("verification_token = ?", token).First(&user).Error; err != nil {
+		http.Error(w, "Invalid or Expired Token", http.StatusBadRequest)
+		return
+	}
+
+	user.IsVerified = true
+	user.VerificationToken = ""
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		http.Error(w, "Failed to verify user", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Email verified successfully",
+	})
+
+}

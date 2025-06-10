@@ -12,6 +12,7 @@ func AuthRoutes() http.Handler {
 
 	r.Post("/signup", handlers.Signup)
 	r.Post("/signin", handlers.Signin)
+	r.Get("/verify", handlers.VerifyHandler)
 
 	return r
 }

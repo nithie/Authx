@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/nithiee/authx/config"
@@ -30,14 +31,26 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := models.User{Email: input.Email, Password: hashedPwd}
+	verifyToken, err := utils.GenetateVerificationToken()
+
+	if err != nil {
+		http.Error(w, "Failed to generate verification link", http.StatusInternalServerError)
+		return
+	}
+
+	user := models.User{Email: input.Email, Password: hashedPwd, IsVerified: false, VerificationToken: verifyToken}
 
 	if err := config.DB.Create(&user).Error; err != nil {
 		http.Error(w, "Error creating user", http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader((http.StatusCreated))
+	go func() {
+		_, err := utils.SendEmailVerificationToken(user.Email, verifyToken)
+		if err != nil {
+			log.Println("Sending verification email failed")
+		}
+	}()
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Signup Successful"})
 }
