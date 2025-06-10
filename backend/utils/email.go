@@ -2,12 +2,15 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"net/smtp"
 )
 
 func SendEmailVerificationToken(toEmail string, token string) (bool, error) {
 	from := GetEnv("EMAIL", "")
-	passwrod := GetEnv("EMAIL_PASS", "")
+	appPassword := GetEnv("EMAIL_PASS", "")
+
+	log.Println(appPassword)
 
 	smptpHost := "smtp.gmail.com"
 	smtpPort := "587"
@@ -20,7 +23,7 @@ func SendEmailVerificationToken(toEmail string, token string) (bool, error) {
 
 	msg := []byte("Subject: " + subject + "\r\n\r\n" + body)
 
-	auth := smtp.PlainAuth("", from, passwrod, smptpHost)
+	auth := smtp.PlainAuth("", from, appPassword, smptpHost)
 
 	err := smtp.SendMail(smptpHost+":"+smtpPort, auth, from, []string{toEmail}, msg)
 
