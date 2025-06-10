@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+
+  redis:
+    image: redis:7
+    container_name: authx_redis
+    ports:
+      - "6379:6379"
+  postgres:
+    image: postgres:15
+    container_name: authx-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: authx_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - authx-net
+
+  
+volumes:
+  pgdata:
+
+networks:
+  authx-net:
