@@ -14,6 +14,7 @@ func AuthRoutes() http.Handler {
 	r.Post("/signin", handlers.Signin)
 	r.Get("/verify", handlers.VerifyHandler)
 	r.Post("/resend-verify-link", handlers.ResendVerificationLink)
-
+	r.Post("/forgot-password", handlers.ForgotPassword)
+	r.Post("/reset-password", handlers.ResetPassword)
 	return r
 }

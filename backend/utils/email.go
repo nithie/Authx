@@ -12,8 +12,8 @@ func SendEmailVerificationToken(toEmail string, token string) (bool, error) {
 
 	log.Println(appPassword)
 
-	smptpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smptpHost := "localhost"
+	smtpPort := "1025"
 
 	verifyLink := fmt.Sprintf("http://localhost:3000/verify?token=%s", token)
 
@@ -23,7 +23,7 @@ func SendEmailVerificationToken(toEmail string, token string) (bool, error) {
 
 	msg := []byte("Subject: " + subject + "\r\n\r\n" + body)
 
-	auth := smtp.PlainAuth("", from, appPassword, smptpHost)
+	auth := smtp.PlainAuth("", "", "", smptpHost)
 
 	err := smtp.SendMail(smptpHost+":"+smtpPort, auth, from, []string{toEmail}, msg)
 

@@ -16,6 +16,15 @@ type SignupInput struct {
 	Password string `json:"password"`
 }
 
+type ForgotPasswordInput struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordInput struct {
+	VerificationToken string `json:"verification_token"`
+	Password          string `json:"password"`
+}
+
 func Signup(w http.ResponseWriter, r *http.Request) {
 	var input SignupInput
 	json.NewDecoder(r.Body).Decode(&input)
@@ -144,7 +153,6 @@ func ResendVerificationLink(w http.ResponseWriter, r *http.Request) {
 		_, err = utils.SendEmailVerificationToken(input.Email, token)
 		if err != nil {
 			log.Println("Sending verification email failed", err)
-
 		}
 	}()
 
@@ -152,9 +160,86 @@ func ResendVerificationLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var input ResetPasswordInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	_, err := utils.ValidatePasswordString(input.Password)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+
+	if err := config.DB.Where("reset_password_token = ?", input.VerificationToken).First(&user).Error; err != nil {
+		http.Error(w, "Inavalid Token", http.StatusBadRequest)
+		return
+	}
+
+	hashedPwd, err := utils.HashPassword(input.Password)
+
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
+	user.Password = hashedPwd
+	user.ResetPasswordToken = ""
+
+	if err := config.DB.Save(user).Error; err != nil {
+		http.Error(w, "Failed to update the new password", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Successful"})
 
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var input ForgotPasswordInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Inavalid request body", http.StatusBadRequest)
+		return
+	}
+
+	_, err := mail.ParseAddress(input.Email)
+
+	if err != nil {
+		http.Error(w, "Inavalid email address", http.StatusBadRequest)
+		return
+	}
+
+	token, err := utils.GenetateVerificationToken()
+
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		http.Error(w, "User not found", http.StatusBadRequest)
+		return
+	}
+
+	user.ResetPasswordToken = token
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		http.Error(w, "Failed to store token", http.StatusInternalServerError)
+		return
+	}
+
+	go func() {
+		_, err = utils.SendEmailVerificationToken(input.Email, token)
+		if err != nil {
+			log.Println("Error while sending verification link")
+		}
+	}()
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Verification link sent successfuly"})
 
 }
