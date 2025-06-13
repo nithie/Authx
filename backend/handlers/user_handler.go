@@ -49,8 +49,26 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	tokenString, err := utils.ExtractToken(r)
+	cookie, err := r.Cookie("refresh_token")
 
+	if err != nil {
+		http.Error(w, "Logout Failed", http.StatusInternalServerError)
+		return
+	}
+
+	config.RedisClient.Del(config.RedisContext, fmt.Sprintf("refresh_token:%s", cookie.Value))
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/api/refresh",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true, // keep consistent with when you set it
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	tokenString, err := utils.ExtractToken(r)
 	if err != nil {
 		http.Error(w, "Logout Failed", http.StatusInternalServerError)
 		return
@@ -167,11 +185,35 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accesToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.Role)
-
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
+	newRefreshToken, err := utils.GenerateRefreshToken()
+
+	if err != nil {
+		http.Error(w, "Failed to generate new refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	config.RedisClient.Del(config.RedisContext, fmt.Sprintf("refresh_tokem:%s", refreshToken))
+
+	err = config.RedisClient.Set(config.RedisContext, fmt.Sprintf("refresh_token:%s", newRefreshToken), userID, 24*7*time.Hour).Err()
+
+	if err != nil {
+		http.Error(w, "Failed to store new refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		Secure:   true,
+		HttpOnly: true,
+		Path:     "/api/refresh",
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+	})
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"access_token": accesToken,
