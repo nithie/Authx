@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/nithiee/authx/config"
@@ -47,14 +49,14 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	tokenString, err1 := utils.ExtractToken(r)
+	tokenString, err := utils.ExtractToken(r)
 
-	if err1 != nil {
+	if err != nil {
 		http.Error(w, "Logout Failed", http.StatusInternalServerError)
 		return
 	}
 
-	err := config.RedisClient.Set(config.RedisContext, tokenString, "true", time.Hour*24).Err()
+	err = config.RedisClient.Set(config.RedisContext, tokenString, "true", time.Hour*24).Err()
 
 	if err != nil {
 		http.Error(w, "Logout Failed", http.StatusInternalServerError)
@@ -136,4 +138,42 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Password changed successfuly"})
 
+}
+
+func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+
+	if err != nil {
+		http.Error(w, "Missing Token", http.StatusUnauthorized)
+		return
+	}
+
+	refreshToken := cookie.Value
+
+	userIdStr, err := config.RedisClient.Get(config.RedisContext, fmt.Sprintf("refresh_tokem:%s", refreshToken)).Result()
+
+	if err != nil {
+		http.Error(w, "Invalid or Expired Refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	userID, _ := strconv.Atoi(userIdStr)
+
+	var user models.User
+
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	accesToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.Role)
+
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token": accesToken,
+	})
 }

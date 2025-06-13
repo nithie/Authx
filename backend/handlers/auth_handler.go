@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/mail"
+	"time"
 
 	"github.com/nithiee/authx/config"
 	"github.com/nithiee/authx/models"
@@ -55,6 +57,37 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	accessToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.Role)
+
+	if err != nil {
+		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, err := utils.GenerateRefreshToken()
+
+	if err != nil {
+		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/api/refresh",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	err = config.RedisClient.Set(config.RedisContext, fmt.Sprintf("refresh_token_%s", refreshToken), user.ID, time.Hour*24).Err()
+
+	if err != nil {
+		http.Error(w, "Failed to store refresh token", http.StatusInternalServerError)
+		return
+	}
+
 	go func() {
 		_, err := utils.SendEmailVerificationToken(user.Email, verifyToken)
 		if err != nil {
@@ -62,7 +95,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Signup Successful"})
+	json.NewEncoder(w).Encode(map[string]string{"access_token": accessToken})
 }
 
 func Signin(w http.ResponseWriter, r *http.Request) {
@@ -84,17 +117,41 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Email, user.Role)
+	token, err := utils.GenerateAccessToken(user.ID, user.Email, user.Role)
 
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
 
+	refreshToken, err := utils.GenerateRefreshToken()
+
+	if err != nil {
+		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/api/refresh",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	err = config.RedisClient.Set(config.RedisContext, fmt.Sprintf("refresh_token_%s", refreshToken), user.ID, time.Hour*24*7).Err()
+
+	if err != nil {
+		http.Error(w, "Failed to store refresh token", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
+		"access_token": token,
 	})
 }
 
