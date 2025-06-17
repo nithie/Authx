@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"fmt"
+	"log"
+	"os"
+)
 
 var (
 	DBUrl     string
@@ -27,8 +31,9 @@ func LoadEnv() {
 }
 
 func getEnv(key string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatal(fmt.Sprintf("❌ Required environment variable %s is not set", key))
 	}
-	return ""
+	return value
 }
