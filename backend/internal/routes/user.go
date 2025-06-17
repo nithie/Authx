@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/nithiee/authx/handlers"
-	"github.com/nithiee/authx/middleware"
+	"github.com/nithiee/authx/internal/handlers"
+	"github.com/nithiee/authx/internal/middleware"
 )
 
 func UserRoutes() http.Handler {

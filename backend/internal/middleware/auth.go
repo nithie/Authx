@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/nithiee/authx/config"
-	"github.com/nithiee/authx/utils"
+	"github.com/nithiee/authx/internal/config"
+	"github.com/nithiee/authx/internal/utils"
 )
 
 type contextKey string

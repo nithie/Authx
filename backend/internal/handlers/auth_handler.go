@@ -8,9 +8,9 @@ import (
 	"net/mail"
 	"time"
 
-	"github.com/nithiee/authx/config"
-	"github.com/nithiee/authx/models"
-	"github.com/nithiee/authx/utils"
+	"github.com/nithiee/authx/internal/config"
+	"github.com/nithiee/authx/internal/models"
+	"github.com/nithiee/authx/internal/utils"
 )
 
 type SignupInput struct {

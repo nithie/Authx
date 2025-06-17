@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
+
+	"github.com/nithiee/authx/internal/config"
 )
 
 func SendEmailVerificationToken(toEmail string, token string) (bool, error) {
-	from := GetEnv("EMAIL", "")
+	from := config.SmtpEmail
 	appPassword := GetEnv("EMAIL_PASS", "")
 
 	log.Println(appPassword)
 
-	smptpHost := "localhost"
-	smtpPort := "1025"
+	smptpHost := config.SmtpHost
+	smtpPort := config.SmtpPort
 
-	verifyLink := fmt.Sprintf("http://localhost:3000/verify?token=%s", token)
+	verifyLink := fmt.Sprintf("%s/verify?token=%s", config.AppUrl, token)
 
 	subject := "Email verification"
 

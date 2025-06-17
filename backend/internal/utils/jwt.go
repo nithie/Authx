@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"github.com/nithiee/authx/internal/config"
 )
 
-var jwtSecret = []byte(GetEnv("JWT_SECRET", "supersecretkey"))
+var jwtSecret = []byte(config.JwtSecret)
 
 func GenerateAccessToken(userID uint, email string, role string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -21,6 +21,6 @@ func GenerateAccessToken(userID uint, email string, role string) (string, error)
 }
 
 func GenerateRefreshToken() (string, error) {
-	token := uuid.NewString()
-	return token, nil
+	token, err := GenetateVerificationToken()
+	return token, err
 }

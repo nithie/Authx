@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nithiee/authx/config"
-	"github.com/nithiee/authx/middleware"
-	"github.com/nithiee/authx/models"
-	"github.com/nithiee/authx/utils"
+	"github.com/nithiee/authx/internal/config"
+	"github.com/nithiee/authx/internal/middleware"
+	"github.com/nithiee/authx/internal/models"
+	"github.com/nithiee/authx/internal/utils"
 )
 
 type ChangePasswordInput struct {
