@@ -1,15 +1,33 @@
-version: '3.8'
+version: '0.1'
 
 services:
+
+  authx:
+    build: .
+    container_name: authx
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - mail
+    networks:
+      - authx-net
+
 
   redis:
     image: redis:7
     container_name: authx_redis
     ports:
       - "6379:6379"
+    networks:
+      - authx-net
+
   postgres:
     image: postgres:15
-    container_name: authx-postgres
+    container_name: authx_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -25,6 +43,8 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
+    networks:
+      - authx-net
 
 volumes:
   pgdata:

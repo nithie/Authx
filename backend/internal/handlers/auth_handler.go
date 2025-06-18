@@ -27,6 +27,16 @@ type ResetPasswordInput struct {
 	Password          string `json:"password"`
 }
 
+// @Summary Signup a new user
+// @Description Create a new user account with email verification
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body models.SignupInput true "Signup Input"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /api/auth/signup [post]
+
 func Signup(w http.ResponseWriter, r *http.Request) {
 	var input SignupInput
 	json.NewDecoder(r.Body).Decode(&input)

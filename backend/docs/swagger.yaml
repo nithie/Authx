@@ -1,0 +1,9 @@
+basePath: /
+host: localhost
+info:
+  contact: {}
+  description: Pluggable authentication microservice
+  title: AuthX API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

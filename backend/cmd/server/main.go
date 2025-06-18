@@ -9,7 +9,14 @@ import (
 	"github.com/nithiee/authx/internal/config"
 	"github.com/nithiee/authx/internal/models"
 	"github.com/nithiee/authx/internal/routes"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// @title AuthX API
+// @version 1.0
+// @description Pluggable authentication microservice
+// @host localhost
+// @Basepath /
 
 func main() {
 	err := godotenv.Load()
@@ -23,6 +30,7 @@ func main() {
 	config.DB.AutoMigrate(&models.User{})
 
 	r := chi.NewRouter()
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 	r.Mount("/auth", routes.AuthRoutes())
 	r.Mount("/user", routes.UserRoutes())
 
