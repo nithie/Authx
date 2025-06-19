@@ -6,7 +6,14 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost",
-    "basePath": "/",
-    "paths": {}
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {},
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
 }

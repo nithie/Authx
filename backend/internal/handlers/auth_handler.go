@@ -8,43 +8,52 @@ import (
 	"net/mail"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/nithiee/authx/internal/config"
 	"github.com/nithiee/authx/internal/models"
 	"github.com/nithiee/authx/internal/utils"
 )
 
-type SignupInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type SignupRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
-type ForgotPasswordInput struct {
-	Email string `json:"email"`
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
 }
 
-type ResetPasswordInput struct {
-	VerificationToken string `json:"verification_token"`
-	Password          string `json:"password"`
+type ResetPasswordRequest struct {
+	VerificationToken string `json:"verification_token" validate:"required"`
+	Password          string `json:"password" validate:"required,min=8"`
 }
 
-// @Summary Signup a new user
-// @Description Create a new user account with email verification
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param user body models.SignupInput true "Signup Input"
-// @Success 201 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Router /api/auth/signup [post]
+//	Signup godoc
+//	@Summary Signup
+//	@Tags Auth
+//	@Accept json
+//	@Produce json
+//	@Router /api/v1/auth/signup [post]
 
 func Signup(w http.ResponseWriter, r *http.Request) {
-	var input SignupInput
-	json.NewDecoder(r.Body).Decode(&input)
+	var input SignupRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		utils.RespondError(w, http.StatusBadRequest, "Invalid Json")
+		return
+	}
+
+	validate := validator.New()
+
+	if err := validate.Struct(input); err != nil {
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	ok, err := utils.ValidatePasswordString(input.Password)
 
 	if !ok {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	hashedPwd, err := utils.HashPassword(input.Password)
@@ -109,7 +118,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func Signin(w http.ResponseWriter, r *http.Request) {
-	var input SignupInput
+	var input SignupRequest
 	if err := json.NewDecoder(r.Body).Decode((&input)); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -227,7 +236,7 @@ func ResendVerificationLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var input ResetPasswordInput
+	var input ResetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -267,7 +276,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var input ForgotPasswordInput
+	var input ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Inavalid request body", http.StatusBadRequest)
 		return
