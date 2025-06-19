@@ -10,7 +10,7 @@ import (
 	"github.com/nithiee/authx/internal/config"
 	"github.com/nithiee/authx/internal/middleware"
 	"github.com/nithiee/authx/internal/models"
-	"github.com/nithiee/authx/internal/utils"
+	"github.com/nithiee/authx/pkg/utils"
 )
 
 type ChangePasswordInput struct {

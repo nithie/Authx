@@ -3,7 +3,9 @@ version: '0.1'
 services:
 
   authx:
-    build: .
+    build:
+      context: .
+      dockerfile: build/Dockerfile
     container_name: authx
     env_file:
       - .env

@@ -11,7 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nithiee/authx/internal/config"
 	"github.com/nithiee/authx/internal/models"
-	"github.com/nithiee/authx/internal/utils"
+	"github.com/nithiee/authx/pkg/utils"
 )
 
 type SignupRequest struct {
